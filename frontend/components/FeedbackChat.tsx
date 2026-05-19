@@ -22,7 +22,7 @@ export default function FeedbackChat({ sessionId, onCampaignsUpdated }: Props) {
     {
       role: "assistant",
       content:
-        "Campaign plan is ready! Give me any feedback and I'll revise the copy. For example:\n• "Make the subject lines shorter"\n• "Add more urgency to email 2 for F&B"\n• "Change the CTA to ask for a 10-min call"",
+        `Campaign plan is ready! Give me any feedback and I'll revise the copy. For example:\n• "Make the subject lines shorter"\n• "Add more urgency to email 2 for F&B"\n• "Change the CTA to ask for a 10-min call"`,
     },
   ]);
   const [input, setInput] = useState("");
