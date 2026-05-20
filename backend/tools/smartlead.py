@@ -43,14 +43,19 @@ async def add_email_sequence(campaign_id: int, sequences: list[dict]) -> dict:
             for seq_idx, s in enumerate(sequences)
         ]
     }
+    print(f"[SmartLead] Uploading {len(sequences)} sequences to campaign {campaign_id}")
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(
             f"{SMARTLEAD_BASE}/campaigns/{campaign_id}/sequences",
             params={"api_key": _api_key()},
             json=payload,
         )
+        print(f"[SmartLead] Sequence upload status={resp.status_code} body={resp.text[:500]}")
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        if isinstance(data, dict) and data.get("ok") is False:
+            raise ValueError(f"SmartLead sequence upload failed: {data}")
+        return data
 
 
 async def add_leads_to_campaign(campaign_id: int, leads: list[dict]) -> dict:
@@ -77,12 +82,14 @@ async def add_leads_to_campaign(campaign_id: int, leads: list[dict]) -> dict:
         lead_list.append(entry)
 
     payload = {"lead_list": lead_list, "settings": {"ignore_global_block_list": False}}
+    print(f"[SmartLead] Enrolling {len(lead_list)} leads into campaign {campaign_id}")
     async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(
             f"{SMARTLEAD_BASE}/campaigns/{campaign_id}/leads",
             params={"api_key": _api_key()},
             json=payload,
         )
+        print(f"[SmartLead] Lead enroll status={resp.status_code} body={resp.text[:300]}")
         resp.raise_for_status()
         return resp.json()
 

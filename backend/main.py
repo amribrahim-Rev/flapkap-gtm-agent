@@ -135,8 +135,7 @@ async def launch_campaigns(request: ChatRequest):
         "1. Create one SmartLead campaign per industry group\n"
         "2. Upload the email sequences for each campaign\n"
         "3. Enroll the leads into their respective campaigns\n"
-        "4. Launch all campaigns\n"
-        "Report progress as you go and confirm when all campaigns are live."
+        "Do NOT activate or launch the campaigns. Stop after enrolling leads and confirm the campaigns are ready in SmartLead but not yet active."
     )
 
     return StreamingResponse(
