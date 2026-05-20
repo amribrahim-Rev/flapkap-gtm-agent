@@ -68,7 +68,6 @@ TOOLS: list[dict] = [
                             "delay_days": {"type": "integer", "description": "Days after previous email."},
                             "subject": {"type": "string"},
                             "email_body": {"type": "string", "description": "HTML or plain text email body. Use {{icebreaker}} as the opening personalised line. The preheader {{preview_text}} is injected automatically — do not add it manually."},
-                            "reply_to_thread": {"type": "boolean"},
                         },
                         "required": ["seq_number", "subject", "email_body"],
                     },

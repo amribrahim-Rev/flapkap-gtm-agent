@@ -45,7 +45,6 @@ async def add_email_sequence(campaign_id: int, sequences: list[dict]) -> dict:
                 "seq_delay_details": {"delay_in_days": s.get("delay_days", 1)},
                 "subject": s["subject"],
                 "email_body": preheader_span + s["email_body"],
-                "reply_to_thread": s.get("reply_to_thread", seq_idx > 0),
             }
             for seq_idx, s in enumerate(sequences)
         ]
