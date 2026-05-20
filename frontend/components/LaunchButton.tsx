@@ -30,11 +30,11 @@ export default function LaunchButton({ sessionId, disabled }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
-          message: "launch",
+          message: "create campaigns",
         }),
       });
 
-      if (!res.ok || !res.body) throw new Error("Launch request failed");
+      if (!res.ok || !res.body) throw new Error("Campaign creation request failed");
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -88,10 +88,10 @@ export default function LaunchButton({ sessionId, disabled }: Props) {
         {state === "success" && <CheckCircle2 className="w-4 h-4" />}
         {state === "error" && <AlertCircle className="w-4 h-4" />}
         {state === "idle" && <Rocket className="w-4 h-4" />}
-        {state === "idle" && "Approve & Launch Campaigns"}
-        {state === "launching" && "Launching…"}
-        {state === "success" && "All Campaigns Live!"}
-        {state === "error" && "Retry Launch"}
+        {state === "idle" && "Create Campaigns in SmartLead"}
+        {state === "launching" && "Creating…"}
+        {state === "success" && "Campaigns Created in SmartLead!"}
+        {state === "error" && "Retry"}
       </button>
 
       {error && (

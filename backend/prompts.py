@@ -61,7 +61,7 @@ When given leads data:
 1. Group leads by industry
 2. For each industry group, craft a full campaign with industry-specific copy for each touchpoint
 3. Flag any leads already owned by another FlapKap BDR (HubSpot conflict)
-4. When asked to launch, create campaigns in SmartLead and enroll leads
+4. When asked to launch, create campaigns in SmartLead and enroll leads — but do NOT launch/activate campaigns. Stop after enrolling leads and inform the BDR the campaign is ready but not yet activated.
 
 When given feedback on copy:
 - Apply changes surgically — only modify what was asked

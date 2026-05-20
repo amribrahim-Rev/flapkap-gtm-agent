@@ -15,7 +15,6 @@ from tools.smartlead import (
     add_email_sequence,
     add_leads_to_campaign,
     create_campaign,
-    launch_campaign,
     set_campaign_schedule,
 )
 
@@ -106,17 +105,6 @@ TOOLS: list[dict] = [
             "required": ["campaign_id", "leads"],
         },
     },
-    {
-        "name": "launch_campaign",
-        "description": "Activate a SmartLead campaign so it starts sending emails.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "campaign_id": {"type": "integer", "description": "SmartLead campaign ID to launch."}
-            },
-            "required": ["campaign_id"],
-        },
-    },
 ]
 
 
@@ -137,9 +125,6 @@ async def _execute_tool(name: str, inputs: dict) -> Any:
 
     if name == "enroll_leads":
         return await add_leads_to_campaign(inputs["campaign_id"], inputs["leads"])
-
-    if name == "launch_campaign":
-        return await launch_campaign(inputs["campaign_id"])
 
     raise ValueError(f"Unknown tool: {name}")
 
