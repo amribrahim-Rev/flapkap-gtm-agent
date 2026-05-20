@@ -31,16 +31,12 @@ async def add_email_sequence(campaign_id: int, sequences: list[dict]) -> dict:
     Upload email sequence (touchpoints) to a campaign.
     sequences: list of {seq_number, subject, email_body, reply_to_thread}
     """
-    def _build_body(s: dict) -> str:
-        body = s["email_body"]
-        preview = s.get("preview_text", "").strip()
-        if preview:
-            preheader = (
-                f'<span style="display:none;max-height:0;overflow:hidden;'
-                f'mso-hide:all;">{preview}</span>'
-            )
-            body = preheader + "\n" + body
-        return body
+    # Inject {{preview_text}} merge tag as hidden preheader — SmartLead resolves
+    # it per-lead from their custom_fields["preview_text"] value.
+    preheader_span = (
+        '<span style="display:none;max-height:0;overflow:hidden;mso-hide:all;">'
+        '{{preview_text}}</span>\n'
+    )
 
     payload = {
         "sequences": [
@@ -48,7 +44,7 @@ async def add_email_sequence(campaign_id: int, sequences: list[dict]) -> dict:
                 "seq_number": s["seq_number"],
                 "seq_delay_details": {"delay_in_days": s.get("delay_days", 1)},
                 "subject": s["subject"],
-                "email_body": _build_body(s),
+                "email_body": preheader_span + s["email_body"],
                 "reply_to_thread": s.get("reply_to_thread", seq_idx > 0),
             }
             for seq_idx, s in enumerate(sequences)
@@ -89,6 +85,7 @@ async def add_leads_to_campaign(campaign_id: int, leads: list[dict]) -> dict:
                 "title": lead.get("title", ""),
                 "city": lead.get("city", ""),
                 "icebreaker": lead.get("icebreaker", ""),
+                "preview_text": lead.get("preview_text", ""),
             },
         }
         lead_list.append(entry)

@@ -48,8 +48,8 @@ At UAE SMEs with AED 2.5M+ annual revenue, 2+ years operating.
 5. **Call to action**: Soft — "15-min call?" or "Worth a quick chat?" — not "Buy now"
 6. **Personalization tokens**: {{first_name}}, {{company_name}}, {{industry_pain_point}}, {{icebreaker}}
 7. **Tone**: Confident, peer-to-peer, not salesy. Speak like a business advisor, not a lender.
-8. **Icebreaker**: Every email must open with {{icebreaker}} as the first line. When enrolling leads, generate a unique 1-2 sentence icebreaker per lead based on their company name, job title, and industry — e.g. "Running {{company_name}} in the UAE's F&B scene, you know better than anyone how tight cash flow gets between supplier invoices and customer payments."
-9. **Preview text**: Every email touchpoint must include a `preview_text` field — 40–90 characters, shown in the inbox before the email is opened. Make it curiosity-driving and pain-specific, e.g. "Your supplier wants payment. Your cash is tied up." Never repeat the subject line.
+8. **Icebreaker (per lead)**: Every email opens with {{icebreaker}}. When enrolling leads, generate a unique 1-2 sentence icebreaker for each individual lead based on their company name, title, and industry. E.g. for an F&B owner: "Running a restaurant in Dubai, you know better than anyone how tight cash flow gets between supplier invoices and weekend revenue."
+9. **Preview text (per lead)**: When enrolling leads, generate a unique `preview_text` (40–90 chars) for each individual lead — shown in their inbox before opening. Pain-specific and curiosity-driving, e.g. "Suppliers want payment. Your cash is still locked up." The sequence template injects it automatically as the preheader — do NOT add it to email_body yourself.
 
 ## Email Sequence Strategy
 - **Touch 1 (Day 1)**: Problem-focused intro — identify their specific cash flow pain, introduce FlapKap as the solution
