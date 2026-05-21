@@ -16,6 +16,7 @@ load_dotenv()
 
 from agent import get_or_create_session, reset_session
 from tools.hubspot import get_owners
+from tools.millionverifier import verify_emails_batch
 from tools.sheet_parser import group_by_industry, parse_sheet
 
 app = FastAPI(title="FlapKap GTM Agent API")
@@ -40,6 +41,10 @@ class ResetRequest(BaseModel):
     session_id: str
 
 
+class VerifyRequest(BaseModel):
+    emails: list[str]
+
+
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
 @app.get("/health")
@@ -55,6 +60,24 @@ async def bdr_list():
         return {"bdrs": bdrs}
     except Exception:
         return {"bdrs": []}
+
+
+@app.post("/verify-emails")
+async def verify_emails_endpoint(request: VerifyRequest):
+    """
+    Verify a list of email addresses via Millionverifier.
+    Returns per-email quality: valid | risky | invalid
+    """
+    try:
+        results = await verify_emails_batch(request.emails)
+        summary = {
+            "valid": sum(1 for r in results if r["quality"] == "valid"),
+            "risky": sum(1 for r in results if r["quality"] == "risky"),
+            "invalid": sum(1 for r in results if r["quality"] == "invalid"),
+        }
+        return {"results": results, "summary": summary}
+    except Exception as exc:
+        raise HTTPException(500, f"Verification failed: {exc}")
 
 
 @app.post("/upload")

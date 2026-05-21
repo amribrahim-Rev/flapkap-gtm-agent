@@ -7,10 +7,11 @@ import CampaignPreview, { Campaign } from "@/components/CampaignPreview";
 import FeedbackChat from "@/components/FeedbackChat";
 import LaunchButton from "@/components/LaunchButton";
 import BdrSelector from "@/components/BdrSelector";
+import VerificationStep, { VerifyResult } from "@/components/VerificationStep";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
-type AppState = "select-bdr" | "upload" | "generating" | "preview";
+type AppState = "select-bdr" | "upload" | "verifying" | "generating" | "preview";
 
 interface UploadResult {
   session_id: string;
@@ -46,6 +47,7 @@ export default function Home() {
   const [appState, setAppState] = useState<AppState>("select-bdr");
   const [selectedBdr, setSelectedBdr] = useState<string>("");
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
+  const [verifyResults, setVerifyResults] = useState<VerifyResult[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -55,19 +57,51 @@ export default function Home() {
     setAppState("upload");
   }, []);
 
-  const handleUploaded = useCallback(async (result: UploadResult) => {
+  const handleUploaded = useCallback((result: UploadResult) => {
     setUploadResult(result);
+    setVerifyResults([]);
+    setAppState("verifying");
+  }, []);
+
+  const handleVerifyDone = useCallback(async (vResults: VerifyResult[], includeRisky: boolean) => {
+    setVerifyResults(vResults);
+    if (!uploadResult) return;
+
+    // Filter leads based on verification results
+    const validEmails = new Set(
+      vResults
+        .filter((r) => r.quality === "valid" || (includeRisky && r.quality === "risky"))
+        .map((r) => r.email.toLowerCase())
+    );
+
+    // Rebuild industry_groups excluding invalid emails
+    const filteredGroups: Record<string, any[]> = {};
+    for (const [industry, leads] of Object.entries(uploadResult.industry_groups)) {
+      const filtered = (leads as any[]).filter(
+        (l) => !vResults.length || validEmails.has((l.email ?? "").toLowerCase())
+      );
+      if (filtered.length > 0) filteredGroups[industry] = filtered;
+    }
+
+    const totalFiltered = Object.values(filteredGroups).reduce((s, a) => s + a.length, 0);
+
     setAppState("generating");
     setIsStreaming(true);
     setStreamingText("");
     setCampaigns([]);
 
-    // Build prompt with the leads data
-    const leadsJson = JSON.stringify(result.industry_groups, null, 2);
+    const invalidCount = vResults.filter((r) => r.quality === "invalid").length;
+    const leadsJson = JSON.stringify(filteredGroups, null, 2);
+    const verifyNote = vResults.length
+      ? `Email verification complete: ${validEmails.size} emails proceeding` +
+        (invalidCount ? `, ${invalidCount} invalid emails excluded` : "") + ".\n\n"
+      : "";
+
     const prompt =
       `Current BDR: ${selectedBdr}\n\nIMPORTANT: Only flag a lead as a HubSpot conflict if it is owned by a DIFFERENT BDR (not ${selectedBdr}). Leads owned by ${selectedBdr} are fine.\n\n` +
-      `I've uploaded a leads sheet with ${result.total_leads} leads across ${result.leads_summary.length} industries:\n` +
-      result.leads_summary.map((s) => `- ${s.industry}: ${s.count} leads`).join("\n") +
+      verifyNote +
+      `I've uploaded a leads sheet with ${totalFiltered} leads across ${Object.keys(filteredGroups).length} industries:\n` +
+      Object.entries(filteredGroups).map(([ind, arr]) => `- ${ind}: ${arr.length} leads`).join("\n") +
       `\n\nPlease:\n` +
       `1. First check HubSpot ownership for all email addresses\n` +
       `2. Then generate a complete cold email campaign plan for each industry group\n` +
@@ -83,7 +117,7 @@ export default function Home() {
       const res = await fetch(`${API}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: result.session_id, message: prompt }),
+        body: JSON.stringify({ session_id: uploadResult.session_id, message: prompt }),
       });
 
       if (!res.ok || !res.body) throw new Error("Failed to generate plan");
@@ -109,7 +143,7 @@ export default function Home() {
         }
       }
 
-      const parsed = parseCampaigns(fullText, result.industry_groups);
+      const parsed = parseCampaigns(fullText, filteredGroups);
       setCampaigns(parsed);
       setAppState("preview");
     } catch (e) {
@@ -118,7 +152,7 @@ export default function Home() {
     } finally {
       setIsStreaming(false);
     }
-  }, [selectedBdr]);
+  }, [uploadResult, selectedBdr]);
 
   const handleCampaignsUpdated = useCallback(
     (rawText: string) => {
@@ -132,6 +166,7 @@ export default function Home() {
     setAppState("select-bdr");
     setSelectedBdr("");
     setUploadResult(null);
+    setVerifyResults([]);
     setCampaigns([]);
     setStreamingText("");
   };
@@ -174,6 +209,13 @@ export default function Home() {
       {appState === "select-bdr" && <BdrSelector onSelected={handleBdrSelected} />}
 
       {appState === "upload" && <SheetUpload onUploaded={handleUploaded} />}
+
+      {appState === "verifying" && uploadResult && (
+        <VerificationStep
+          emails={Object.values(uploadResult.industry_groups).flat().map((l: any) => l.email).filter(Boolean)}
+          onDone={handleVerifyDone}
+        />
+      )}
 
       {(appState === "generating" || appState === "preview") && uploadResult && (
         <div className="flex h-[calc(100vh-49px)]">
