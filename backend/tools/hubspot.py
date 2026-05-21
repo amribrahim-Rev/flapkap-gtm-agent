@@ -10,6 +10,24 @@ def _headers() -> dict:
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
 
+async def get_owners() -> list[dict]:
+    """
+    Return a list of all HubSpot owners (BDRs).
+    Each entry has id, name, email.
+    """
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(f"{HUBSPOT_BASE}/crm/v3/owners", headers=_headers())
+        resp.raise_for_status()
+        data = resp.json()
+    owners = []
+    for o in data.get("results", []):
+        first = o.get("firstName", "")
+        last = o.get("lastName", "")
+        name = f"{first} {last}".strip() or o.get("email", "")
+        owners.append({"id": str(o.get("id", "")), "name": name, "email": o.get("email", "")})
+    return owners
+
+
 async def check_ownership_batch(emails: list[str]) -> dict[str, Optional[str]]:
     """
     Given a list of email addresses, return a dict mapping each email

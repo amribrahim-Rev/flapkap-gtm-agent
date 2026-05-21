@@ -15,6 +15,7 @@ from pydantic import BaseModel
 load_dotenv()
 
 from agent import get_or_create_session, reset_session
+from tools.hubspot import get_owners
 from tools.sheet_parser import group_by_industry, parse_sheet
 
 app = FastAPI(title="FlapKap GTM Agent API")
@@ -44,6 +45,16 @@ class ResetRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/bdr-list")
+async def bdr_list():
+    """Return the list of HubSpot owners (BDRs). Returns empty list on failure."""
+    try:
+        bdrs = await get_owners()
+        return {"bdrs": bdrs}
+    except Exception:
+        return {"bdrs": []}
 
 
 @app.post("/upload")

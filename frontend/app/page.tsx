@@ -6,10 +6,11 @@ import SheetUpload from "@/components/SheetUpload";
 import CampaignPreview, { Campaign } from "@/components/CampaignPreview";
 import FeedbackChat from "@/components/FeedbackChat";
 import LaunchButton from "@/components/LaunchButton";
+import BdrSelector from "@/components/BdrSelector";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
-type AppState = "upload" | "generating" | "preview";
+type AppState = "select-bdr" | "upload" | "generating" | "preview";
 
 interface UploadResult {
   session_id: string;
@@ -42,11 +43,17 @@ function parseCampaigns(text: string, industryGroups: Record<string, any[]>): Ca
 }
 
 export default function Home() {
-  const [appState, setAppState] = useState<AppState>("upload");
+  const [appState, setAppState] = useState<AppState>("select-bdr");
+  const [selectedBdr, setSelectedBdr] = useState<string>("");
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+
+  const handleBdrSelected = useCallback((name: string) => {
+    setSelectedBdr(name);
+    setAppState("upload");
+  }, []);
 
   const handleUploaded = useCallback(async (result: UploadResult) => {
     setUploadResult(result);
@@ -58,6 +65,7 @@ export default function Home() {
     // Build prompt with the leads data
     const leadsJson = JSON.stringify(result.industry_groups, null, 2);
     const prompt =
+      `Current BDR: ${selectedBdr}\n\nIMPORTANT: Only flag a lead as a HubSpot conflict if it is owned by a DIFFERENT BDR (not ${selectedBdr}). Leads owned by ${selectedBdr} are fine.\n\n` +
       `I've uploaded a leads sheet with ${result.total_leads} leads across ${result.leads_summary.length} industries:\n` +
       result.leads_summary.map((s) => `- ${s.industry}: ${s.count} leads`).join("\n") +
       `\n\nPlease:\n` +
@@ -110,7 +118,7 @@ export default function Home() {
     } finally {
       setIsStreaming(false);
     }
-  }, []);
+  }, [selectedBdr]);
 
   const handleCampaignsUpdated = useCallback(
     (rawText: string) => {
@@ -121,7 +129,8 @@ export default function Home() {
   );
 
   const reset = () => {
-    setAppState("upload");
+    setAppState("select-bdr");
+    setSelectedBdr("");
     setUploadResult(null);
     setCampaigns([]);
     setStreamingText("");
@@ -137,8 +146,13 @@ export default function Home() {
           </div>
           <span className="font-semibold text-sm">FlapKap GTM Agent</span>
         </div>
-        {appState !== "upload" && (
+        {appState !== "select-bdr" && (
           <div className="flex items-center gap-4">
+            {selectedBdr && (
+              <span className="text-xs bg-flapkap-green/20 text-flapkap-green px-2.5 py-1 rounded-full font-medium">
+                {selectedBdr}
+              </span>
+            )}
             {uploadResult && (
               <span className="text-xs text-slate-400">
                 <LayoutGrid className="w-3.5 h-3.5 inline mr-1" />
@@ -157,6 +171,8 @@ export default function Home() {
       </header>
 
       {/* Content */}
+      {appState === "select-bdr" && <BdrSelector onSelected={handleBdrSelected} />}
+
       {appState === "upload" && <SheetUpload onUploaded={handleUploaded} />}
 
       {(appState === "generating" || appState === "preview") && uploadResult && (
@@ -185,6 +201,7 @@ export default function Home() {
                     campaigns={campaigns}
                     isStreaming={false}
                     streamingText=""
+                    onUpdate={(updated) => setCampaigns(updated)}
                   />
                   {campaigns.length > 0 && (
                     <div className="mt-6">
